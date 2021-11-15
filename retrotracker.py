@@ -68,6 +68,9 @@ def cmd_start(args: Any):
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger('PIL.PngImagePlugin').disabled = True
+    if args.bbox:
+        bbox = eval(args.bbox)
+        assert isinstance(bbox, tuple) and len(bbox) == 4
     if args.position:
         import pymouse
         m = pymouse.PyMouse()
@@ -78,7 +81,7 @@ def cmd_start(args: Any):
         input('')
         x2, y2 = m.position()
         bbox = (x, y, x2 - x, y2 - y)
-        print('bbox: {bbox}')
+        print(f'you can use --bbox "{bbox}" instead of --position')
     else:
         bbox = DEFAULT_BBOX
 
@@ -100,6 +103,7 @@ if __name__ == '__main__':
     subparser.add_argument('--team', type=int, default=1)
     subparser.add_argument('--debug', action='store_true')
     subparser.add_argument('--position', action='store_true')
+    subparser.add_argument('--bbox', type=str)
     subparser.set_defaults(func=cmd_start)
 
     args = parser.parse_args()
