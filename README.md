@@ -1,4 +1,5 @@
 # retrotracker
+stats tracker for https://retro-mmo.com/play
 
 Uses OCR to watch screen and parse retrommo battle events. Keep track of damage
 dealt, gold and exp earned.
