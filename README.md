@@ -1,6 +1,8 @@
 # retrotracker
 stats tracker for https://retro-mmo.com/play
 
+only tested on Linux (Debian)
+
 Uses OCR to watch screen and parse retrommo battle events. Keep track of damage
 dealt, gold and exp earned.
 
@@ -13,6 +15,9 @@ There are 3 executable python scripts for using retrotracker:
 1. query.py - read-only database queries
 
 ## basic usage
+1. install some prereqs
+    1. `python3 -m pip install numpy pillow pytesseract pyscreenshot unidecode`
+    1. you'll need tesseract too `apt install tesseract-ocr`
 1. start by initializing the database: `./modify.py init`
 1. create some player stats
     1. use preset stats `./modify create_presets`
