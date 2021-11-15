@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-from PIL import Image
+from PIL import Image, ImageFilter
 import PIL.ImageOps
 import pyscreenshot as ImageGrab
 import pytesseract
@@ -20,8 +20,8 @@ warnings.filterwarnings('ignore', category=Warning)
 IGNORE_REGEX = re.compile(r'(meal\)|Sa 0\))')
 # replace common ocr mistakes
 INT_TRANS = str.maketrans(
-    '&y',
-    '67'
+    's&y',
+    '567'
 )
 
 
@@ -58,6 +58,8 @@ class OCR:
         r, g, b, a = image.split()
         image = Image.merge('RGB', (r, g, b))
         image = PIL.ImageOps.invert(image)
+        image = image.filter(ImageFilter.BLUR)
+        # image.save('/tmp/mmo.png')
         return pytesseract.image_to_string(image)
 
     #
@@ -82,26 +84,10 @@ class OCR:
         for s in text.split('\n'):
             s = s.strip()
             if s != '' and len(s) > 5 and not self.ignore(s):
-                yield self.correct_typos(s)
+                yield s.lower()
 
     def ignore(
         self,
         text: str,
     ) -> bool:
         return IGNORE_REGEX.match(text) is not None
-
-    def correct_typos(self, text: str) -> str:
-        # TODO: do some similarity matching on known monster names
-        text = text.lower()
-        text = text.replace('duses', 'd uses')
-        text = re.sub('a..?.?ack', 'attack', text)
-        text = text.replace('cove ', 'cave ')
-        text = text.replace('cave bok', 'cave bat')
-        text = text.replace('cave bak', 'cave bat')
-        text = text.replace('worrior', 'warrior')
-        text = text.replace('takes s', 'takes ')
-        text = text.replace('grunk', 'grunt')
-        text = text.replace('gald', 'gold')
-        text = text.replace('wses', 'uses')
-        text = text.replace('douses', 'uses')
-        return text

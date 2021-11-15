@@ -71,7 +71,7 @@ def cmd_start(args: Any):
     if args.bbox:
         bbox = eval(args.bbox)
         assert isinstance(bbox, tuple) and len(bbox) == 4
-    if args.position:
+    elif args.position:
         import pymouse
         m = pymouse.PyMouse()
         print('position mouse at top-left of text box, then press enter')
