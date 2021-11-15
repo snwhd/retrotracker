@@ -36,6 +36,7 @@ class GameState:
         database: Database,
     ) -> None:
         self.database = database
+        self.second_database : Optional[Database] = None
         self.gold_count = 0
         self.exp_count = 0
         self.state = 'none'
@@ -44,6 +45,16 @@ class GameState:
         self.ability: Optional[str]  = None
         self.target: Optional[str] = None
         self.source: Optional[str] = None
+
+    def init_second_db(self) -> None:
+        self.second_database = Database()
+        self.second_database.connect()
+        self.second_database.populate_monsters_cache()
+
+    def close_second_db(self) -> None:
+        if self.second_database is not None:
+            self.second_database.disconnect()
+            self.second_database = None
 
     def add_player(
         self,
@@ -55,6 +66,7 @@ class GameState:
     def handle_line(
         self,
         line: str,
+        second_db = False,
     ) -> Optional[GameEvent]:
         matches = RE_USES_ATTACK.match(line)
         if matches:
@@ -80,10 +92,16 @@ class GameState:
         matches = RE_TAKES_DAMAGE.match(line)
         if matches:
             target, damage_s = matches.groups()
-            damage = OCR.int(damage_s)
+            damage = OCR.parse_int(damage_s)
             event: Optional[GameEvent] = None
+
+            if damage > 110:
+                old_damage = damage
+                damage -= (damage // 100) * 100
+                logging.debug(f'damage {old_damage} looks too high -> {damage}')
+
             if self.state == 'player attacking':
-                self.player_hits(target, damage)
+                self.player_hits(target, damage, second_db)
                 event = GameEvent(
                     EventType.player_hit,
                     source = self.source,
@@ -92,7 +110,7 @@ class GameState:
                     ability = self.ability,
                 )
             elif self.state == 'monster attacking':
-                self.monster_hits(target, damage)
+                self.monster_hits(target, damage, second_db)
                 event = GameEvent(
                     EventType.monster_hit,
                     source = self.source,
@@ -111,7 +129,7 @@ class GameState:
 
         matches = RE_FIND_GOLD.match(line)
         if matches:
-            amount = OCR.int(matches.groups()[0])
+            amount = OCR.parse_int(matches.groups()[0])
             self.gold_count += amount
             return GameEvent(
                 EventType.get_gold,
@@ -121,7 +139,7 @@ class GameState:
 
         matches = RE_GAIN_EXP.match(line)
         if matches:
-            amount = OCR.int(matches.groups()[0])
+            amount = OCR.parse_int(matches.groups()[0])
             self.exp_count += amount
             return GameEvent(
                 EventType.get_exp,
@@ -136,6 +154,7 @@ class GameState:
         self,
         target: str,
         damage: int,
+        second_db = False,
     ) -> None:
         if self.ability is None or self.target is None or self.source is None:
             logging.debug(f'missing parameters for player_hits')
@@ -152,13 +171,12 @@ class GameState:
 
         # TODO: validate ability & monsters
 
-        if damage > 110:
-            old_damage = damage
-            damage -= (damage // 100) * 100
-            logging.debug(f'damage {old_damage} looks too high -> {damage}')
+        database = self.database
+        if second_db and self.second_database is not None:
+            database = self.second_database
 
-        mid = self.database.get_monster_id(self.target)
-        self.database.insert_player_hit(
+        mid = database.get_monster_id(self.target)
+        database.insert_player_hit(
             player,
             self.ability,
             mid,
@@ -170,6 +188,7 @@ class GameState:
         self,
         target: str,
         damage: int,
+        second_db = False,
     ) -> None:
         if self.ability is None or self.target is None or self.source is None:
             logging.debug(f'missing parameters for monster_hits')
@@ -186,8 +205,12 @@ class GameState:
 
         # TODO: validate ability & monsters
 
-        mid = self.database.get_monster_id(self.source)
-        self.database.insert_monster_hit(
+        database = self.database
+        if second_db and self.second_database is not None:
+            database = self.second_database
+
+        mid = database.get_monster_id(self.source)
+        database.insert_monster_hit(
             mid,
             self.ability,
             player,

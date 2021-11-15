@@ -42,7 +42,7 @@ class OCR:
         self.h = h
 
     @staticmethod
-    def int(s: str) -> int:
+    def parse_int(s: str) -> int:
         return int(s.translate(INT_TRANS))
 
     def screen_capture(self) -> Image:
@@ -52,6 +52,12 @@ class OCR:
             self.x + self.w,
             self.y + self.h,
         ])
+
+    def set_bbox(self, x: int, y: int, w: int, h: int) -> None:
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
 
     def capture_string(self) -> str:
         image = self.screen_capture()

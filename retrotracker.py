@@ -14,7 +14,7 @@ from database import Database
 from gamestate import GameState
 
 
-DEFAULT_BBOX = (180, 690, 620, 130)
+DEFAULT_BBOX = (366, 701, 939, 192)
 
 
 class RetroTracker:
