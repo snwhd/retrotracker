@@ -207,7 +207,10 @@ class GuiTracker(QWidget):
             self.update_gold_count()
         elif e.type == EventType.get_exp:
             self.update_exp_count()
-        self.log_layout.addWidget(QLabel(str(e)))
+        try:
+            self.log_layout.addWidget(QLabel(str(e)))
+        except ValueError as e:
+            print(f'value error from event: {e}')
 
     def on_string_logged(self, s: str) -> None:
         self.log_layout.addWidget(QLabel(s));
@@ -216,13 +219,13 @@ class GuiTracker(QWidget):
         hours = self.worker.duration / (60 * 60)
         gold = self.tracker.gamestate.gold_count
         hourly = gold // hours
-        self.gold_display.setText(f'{gold} ({hourly}/hr)')
+        self.gold_display.setText(f'{gold} gold ({hourly}/hr)')
 
     def update_exp_count(self) -> None:
         hours = self.worker.duration / (60 * 60)
         exp = self.tracker.gamestate.exp_count
         hourly = exp // hours
-        self.exp_display.setText(f'{exp} ({hourly}/hr)')
+        self.exp_display.setText(f'{exp} exp ({hourly}/hr)')
 
     #
     # username input
