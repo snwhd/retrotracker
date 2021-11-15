@@ -61,7 +61,7 @@ def cmd_start(tracker: RetroTracker, args: Any):
         logging.getLogger('PIL.PngImagePlugin').disabled = True
     tracker.database.populate_monsters_cache()
     player = tracker.database.load_player(args.player)
-    tracker.gamestate.add_player(args.player_name, player)
+    tracker.gamestate.add_player(args.player_name.lower(), player)
     tracker.run()
 
 
