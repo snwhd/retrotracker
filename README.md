@@ -1,12 +1,10 @@
 # retrotracker
 stats tracker for https://retro-mmo.com/play
 
-only tested on Linux (Debian)
-
 Uses OCR to watch screen and parse retrommo battle events. Keep track of damage
 dealt, gold and exp earned.
 
-Fixing OCR typos with known retrommo names is a work in progres..
+Only tested on Linux (Debian)
 
 ## executables
 There are 3 executable python scripts for using retrotracker:
@@ -43,3 +41,8 @@ recognition. See the screenshot below for refernce:
 
 Note: you have to press enter on the terminal before it reads your input.
 Use alt-tab since you can't move the mouse until it has read the position!
+
+## work in progress
+
+* fixing OCR typos with known retrommo names (items, monsters, abilities...)
+* maybe a gui interface or something, rightn now CLI only
