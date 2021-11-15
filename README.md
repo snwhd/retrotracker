@@ -16,19 +16,21 @@ There are 3 executable python scripts for using retrotracker:
 1. create some player stats
     1. use preset stats `./modify create_presets`
     1. or use the interactive tool `./modify add_player`
-1. run the tracker `./retrotracker.py start --position "retrommo username" "stats alias"
+	1. NOTE: not all item stats are in this tool yet, but adding them is easy!
+(check the HGear, BGear, OGear, and MGear enums in player.py).
+1. run the tracker `./retrotracker.py start --position "retrommo username" "stats alias"`
     1. see note below on positioning
     1. retrommo is whatever name appears on screen text
     1. stats alias was created in step 2 above
 
 
 ## positioning
-The OCR needs to read battle, text. Using --position with retrotracker start
+The OCR needs to read battle text. Using `--position` with retrotracker start
 will prompt you to input the screen positions. It does this by detecting
 your mouse position at two points: top left and bottom right of the text box.
 
 The optimal positioning here will create a rectangle that contains only the
-text, and NOT the pixel border around the text. The boarder can mess up text
+text, and NOT the pixel border around the text. The border can mess up text
 recognition. See the screenshot below for refernce:
 
 ![positioning guide](screen_position.png "positioning guide")

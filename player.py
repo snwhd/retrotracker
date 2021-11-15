@@ -109,23 +109,27 @@ class Stats:
 
 
 class HGear(Stats, enum.Enum):
-    dented_helm = (0, 0, 0, 3, 0, 0, 0, 0)
-    mage_hat = (0, 0, 0, 1, 0, 1, 2, 0)
+    #               hp,  mp, str, def, agi, int, wis, lck
+    dented_helm = (  0,   0,   0,   3,   0,   0,   0,   0)
+    mage_hat    = (  0,   0,   0,   1,   0,   1,   2,   0)
 
 
 class BGear(Stats, enum.Enum):
-    leather_armor = (0, 0, 0, 3, 0, 0, 0, 0)
-    tattered_cloak = (0, 0, 0, 1, 0, 0, 1, 0)
+    #                  hp,  mp, str, def, agi, int, wis, lck
+    leather_armor  = (  0,   0,   0,   3,   0,   0,   0,   0)
+    tattered_cloak = (  0,   0,   0,   1,   0,   0,   1,   0)
 
 
 class MGear(Stats, enum.Enum):
-    tenderizer = (0, 0, 8, 0, 0, 0, 0, 0)
-    crooked_wand = (0, 0, 1, 0, 0, 5, 0, 0)
+    #                hp,  mp, str, def, agi, int, wis, lck
+    tenderizer   = (  0,   0,   8,   0,   0,   0,   0,   0)
+    crooked_wand = (  0,   0,   1,   0,   0,   5,   0,   0)
 
 
 class OGear(Stats, enum.Enum):
-    studded_shield = (0, 0, 0, 3, 0, 0, 1, 0)
-    bone_bracelet = (0, 0, 1, 1, 1, 1, 1, 1)
+    #                  hp,  mp, str, def, agi, int, wis, lck
+    studded_shield = (  0,   0,   0,   3,   0,   0,   1,   0)
+    bone_bracelet  = (  0,   0,   1,   1,   1,   1,   1,   1)
 
 
 GearType = Tuple[HGear, BGear, MGear, OGear]
