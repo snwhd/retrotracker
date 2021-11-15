@@ -20,8 +20,8 @@ warnings.filterwarnings('ignore', category=Warning)
 IGNORE_REGEX = re.compile(r'(meal\)|Sa 0\))')
 # replace common ocr mistakes
 INT_TRANS = str.maketrans(
-    's&y',
-    '567'
+    'olis&y',
+    '011567'
 )
 
 

@@ -36,13 +36,30 @@ class RetroTracker:
 
     def run(self) -> None:
         start_time = time.time()
+        update_timer = 0;
+        did_log = False
         while True:
             try:
                 time.sleep(0.25)
+                update_timer += 1
                 for line in self.ocr.gen_retrommo_lines():
                     event = self.gamestate.handle_line(line)
                     if event is not None:
+                        if not did_log:
+                            print('')
+                        did_log = True
                         print(str(event))
+
+                if update_timer % 40 == 1:
+                    if not did_log:
+                        print('\r' + ' ' * 32 + '\r', end='')
+                    did_log = False
+                    end_time = time.time()
+                    delta = end_time - start_time
+                    hours = delta / (60 * 60)
+                    exp = self.gamestate.exp_count // hours
+                    gold = self.gamestate.gold_count // hours
+                    print(f'{exp} exp/hr - {gold} gold/hr', end='', flush=True)
             except KeyboardInterrupt:
                 print('  exiting')
                 break
