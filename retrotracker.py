@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-from typing import Any
+from typing import (
+    Any,
+    Tuple,
+)
 
 import logging
 import time
@@ -11,12 +14,18 @@ from database import Database
 from gamestate import GameState
 
 
+DEFAULT_BBOX = (180, 690, 620, 130)
+
+
 class RetroTracker:
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        ocrbox: Tuple[int, int, int, int] = DEFAULT_BBOX,
+    ) -> None:
         self.database = Database()
         self.gamestate = GameState(self.database)
-        self.ocr = OCR(180, 690, 620, 130)
+        self.ocr = OCR(*ocrbox)
 
     def __enter__(self) -> RetroTracker:
         self.database.connect()
@@ -55,14 +64,29 @@ class RetroTracker:
         print(f'gld/hr - {gold//hours}')
 
 
-def cmd_start(tracker: RetroTracker, args: Any):
+def cmd_start(args: Any):
     if args.debug:
         logging.getLogger().setLevel(logging.DEBUG)
         logging.getLogger('PIL.PngImagePlugin').disabled = True
-    tracker.database.populate_monsters_cache()
-    player = tracker.database.load_player(args.player)
-    tracker.gamestate.add_player(args.player_name.lower(), player)
-    tracker.run()
+    if args.position:
+        import pymouse
+        m = pymouse.PyMouse()
+        print('position mouse at top-left of text box, then press enter')
+        input('')
+        x, y = m.position()
+        print('now do bottom left')
+        input('')
+        x2, y2 = m.position()
+        bbox = (x, y, x2 - x, y2 - y)
+        print('bbox: {bbox}')
+    else:
+        bbox = DEFAULT_BBOX
+
+    with RetroTracker(bbox) as tracker:
+        tracker.database.populate_monsters_cache()
+        player = tracker.database.load_player(args.player)
+        tracker.gamestate.add_player(args.player_name.lower(), player)
+        tracker.run()
 
 
 if __name__ == '__main__':
@@ -75,8 +99,8 @@ if __name__ == '__main__':
     subparser.add_argument('player', type=str, default=None)
     subparser.add_argument('--team', type=int, default=1)
     subparser.add_argument('--debug', action='store_true')
+    subparser.add_argument('--position', action='store_true')
     subparser.set_defaults(func=cmd_start)
 
     args = parser.parse_args()
-    with RetroTracker() as tracker:
-        args.func(tracker, args)
+    args.func(args)
