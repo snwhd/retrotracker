@@ -23,10 +23,10 @@ from event import (
 RE_NAME = '([^-]+)(?:-+.+)?'
 
 # Using .* instead of \d* in some places because OCR is not perfect
-RE_USES_ATTACK =  re.compile(f'{RE_NAME} uses (.*) on {RE_NAME}.')
-RE_TAKES_DAMAGE = re.compile(f'{RE_NAME} takes (.*) damage.')
-RE_FIND_GOLD =    re.compile(r'you find (\d+) gold.')
-RE_GAIN_EXP =     re.compile(r'you gain (\d+) experience.')
+RE_USES_ATTACK =  re.compile(f'{RE_NAME} uses (.+) on {RE_NAME}.')
+RE_TAKES_DAMAGE = re.compile(f'{RE_NAME} takes (.+) damage.')
+RE_FIND_GOLD =    re.compile(r'you find (.+) gold.')
+RE_GAIN_EXP =     re.compile(r'you gain (.+) experience.')
 
 
 class GameState:
