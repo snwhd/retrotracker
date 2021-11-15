@@ -1,8 +1,8 @@
 # retrotracker
 stats tracker for https://retro-mmo.com/play
 
-Uses OCR to watch screen and parse retrommo battle events. Keep track of damage
-dealt, gold and exp earned.
+Uses OCR to watch screen and parse battle events. Keeps track of damage,
+gold and experience.
 
 Only tested on Linux (Debian)
 
@@ -20,12 +20,12 @@ There are 3 executable python scripts for using retrotracker:
 1. create some player stats
     1. use preset stats `./modify create_presets`
     1. or use the interactive tool `./modify add_player`
+    1. you can then convirm your player with `./query players`
 	1. NOTE: not all item stats are in this tool yet, but adding them is easy!
 (check the HGear, BGear, OGear, and MGear enums in player.py).
 1. run the tracker `./retrotracker.py start --position "retrommo username" "stats alias"`
     1. see note below on positioning
-    1. retrommo is whatever name appears on screen text
-    1. stats alias was created in step 2 above
+    1. stats alias was created in step 3 above
 
 
 ## positioning
