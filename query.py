@@ -90,7 +90,7 @@ def cmd_player_hit(tracker: RetroTracker, args: Any):
             oneshots = numpy.where(numpy.array(hits) >= max_hp)[0]
             chance = (len(oneshots) / len(hits)) * 100
             oneshot_chance = f'({chance:0.02f}% one-shot)'
-        print(f'{ability} - avg: {avg:0.02f}, std: {std:0.02f} {oneshot_chance}')
+        print(f'{ability} - n={len(hits)} avg={avg:0.02f} std={std:0.02f} {oneshot_chance}')
 
 
 def cmd_monsters(tracker: RetroTracker, args: Any):
@@ -124,7 +124,7 @@ def cmd_monster_hit(tracker: RetroTracker, args: Any):
         avg = numpy.average(hits)
         std = numpy.std(hits)
         max_hp = MONSTER_HP_LOOKUP.get(monster)
-        print(f'{ability} - avg: {avg:0.02f}, std: {std:0.02f}')
+        print(f'{ability} - n={len(hits)} avg={avg:0.02f} std={std:0.02f}')
 
 
 if __name__ == '__main__':
