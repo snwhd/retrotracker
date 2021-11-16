@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from typing import (
     cast,
+    Any,
     List,
     Tuple,
 )
@@ -23,18 +24,11 @@ from PyQt5.QtCore import (
 )
 import time
 import pymouse
+import logging
+import datetime
 
 from event import GameEvent, EventType
 from retrotracker import RetroTracker
-
-
-class ClickableLineEdit(QLineEdit):
-
-    clicked = pyqtSignal()
-
-    def mousePressEvent(self, event):
-        self.clicked.emit()
-        QLineEdit.mousePressEvent(self, event)
 
 
 class GuiWorker(QObject):
@@ -42,6 +36,7 @@ class GuiWorker(QObject):
     finished = pyqtSignal()
     log_event = pyqtSignal(GameEvent)
     log_string = pyqtSignal(str)
+    log_tick = pyqtSignal()
 
     def __init__(self, tracker: RetroTracker, parent=None):
         super().__init__(parent)
@@ -87,6 +82,7 @@ class GuiWorker(QObject):
                         event = self.tracker.gamestate.handle_line(line, second_db=True)
                         if event is not None:
                             self.handle_event(event)
+                self.log_tick.emit()
                 time.sleep(0.25)
             except Exception as e:
                 print(f'error: {e}')
@@ -111,6 +107,134 @@ class GuiWorker(QObject):
         self.log_string.emit(text)
 
 
+#
+# custom widgets
+#
+
+
+class ClickableLineEdit(QLineEdit):
+
+    clicked = pyqtSignal()
+
+    def mousePressEvent(self, event):
+        self.clicked.emit()
+        QLineEdit.mousePressEvent(self, event)
+
+
+class PlayerSelect(QWidget):
+
+    username_changed = pyqtSignal(int, str)
+    class_changed = pyqtSignal(int, str)
+
+    def __init__(
+        self,
+        player_index: int,
+        class_options: List[str],
+    ) -> None:
+        super().__init__()
+        self.player_index = player_index
+        self.class_names = list(class_options)
+        self.username = ''
+
+        self.username_editor = ClickableLineEdit()
+        self.username_editor.setText('username')
+        self.username_editor.setAlignment(Qt.AlignCenter) # type: ignore
+        self.username_editor.textChanged.connect(self.on_username_changed) # type: ignore
+        self.username_editor.clicked.connect(self.on_username_clicked)
+
+        self.class_index = 0
+        self.class_options = QComboBox()
+        self.class_options.addItem('-')
+        self.players: List[Tuple[int, str]] = []
+        for pid, name in enumerate(class_options):
+            self.class_options.addItem(name)
+            self.players.append((pid, name))
+        self.class_options.currentIndexChanged.connect(self.on_class_selected) # type: ignore
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.username_editor)
+        layout.addWidget(self.class_options)
+        self.setLayout(layout)
+
+    @property
+    def selected_class(self) -> str:
+        return self.class_names[self.class_index]
+
+    def on_username_changed(self, s: str) -> None:
+        """called any time username text box changes"""
+        if s != '' and s != 'username':
+            self.username = s
+            self.username_changed.emit(
+                self.player_index,
+                self.username,
+            )
+
+    def on_username_clicked(self) -> None:
+        """called when username text box clicked, clears placeholder"""
+        if self.username_editor.text() == 'username':
+            self.username_editor.setText('')
+
+    def on_class_selected(self, i: int) -> None:
+        """called when a class is chosen from drop down"""
+        if i == 0:
+            if self.class_index > 0:
+                # don't allow selection
+                self.class_options.setCurrentIndex(self.class_index + 1)
+            return
+
+        class_index = i - 1
+        if class_index != self.class_index:
+            self.class_index = class_index
+            self.class_changed.emit(
+                self.player_index,
+                self.selected_class,
+            )
+
+
+class PartyMenu(QWidget):
+
+    players_changed = pyqtSignal(list)
+
+    def __init__(
+        self,
+        tracker: RetroTracker,
+    ) -> None:
+        super().__init__()
+        class_options: List[str] = [
+            r[0] for r in
+            tracker.database.select('SELECT name FROM players', ())
+        ]
+        self.players: List[List[str]] = [
+            ['', ''],
+            ['', ''],
+            ['', ''],
+        ]
+
+        layout = QVBoxLayout()
+        # layout.setSpacing(0)
+        # layout.setContentsMargins(0, 0, 0, 0)
+        for i in range(3):
+            player_select = PlayerSelect(i, class_options)
+            player_select.username_changed.connect(self.username_changed)
+            player_select.class_changed.connect(self.class_changed)
+            layout.addWidget(player_select)
+        self.setLayout(layout)
+
+    def username_changed(self, i: int, username: str) -> None:
+        self.players[i][0] = username
+        self.players_changed.emit(self.players)
+
+    def class_changed(self, i: int, classname: str) -> None:
+        self.players[i][1] = classname
+        self.players_changed.emit(self.players)
+
+
+#
+# main application widget
+#
+
+
 class GuiTracker(QWidget):
 
     def __init__(
@@ -119,59 +243,29 @@ class GuiTracker(QWidget):
     ) -> None:
         super().__init__()
         self.tracker = tracker
-        self.players: List[Tuple[int, str]] = []
-        self.selected_player_index = -1
-        self.username = ''
 
         # ignore some warnings because value is set in create_ui
-        self.scroll: QScrollArea = None        # type: ignore
         self.log_layout: QVBoxLayout = None    # type: ignore
         self.exp_display: QLabel = None        # type: ignore
         self.gold_display: QLabel = None       # type: ignore
-        self.player_options: QComboBox = None  # type: ignore
-        self.username_editor: QLineEdit = None # type: ignore
+        self.time_display: QLabel = None       # type: ignore
+
         self.setWindowTitle('RetroTracker')
         self.create_worker()
         self.create_ui()
-        self.thread.start()
+        self.worker_thread.start()
+
+    #
+    # ui creation
+    #
 
     def create_ui(self) -> None:
         layout = QVBoxLayout()
-
-        top_side = QWidget()
-        top_side_layout = QHBoxLayout()
-        top_side_layout.addWidget(self.create_focus_catch())
-        top_side_layout.addWidget(self.create_username_box())
-        top_side_layout.addWidget(self.create_player_select())
-        top_side_layout.addWidget(self.create_resize_button())
-        top_side.setLayout(top_side_layout)
-
-        self.start_button = QPushButton('start')
-        self.start_button.clicked.connect(self.main_button_clicked)
-
-        self.gold_display = QLabel('0 gold (0/hr)')
-        self.exp_display = QLabel('0 exp (0/hr)')
-
-        bottom_side = QWidget()
-        bottom_side_layout = QVBoxLayout()
-        bottom_side_layout.addWidget(QLabel('Log'))
-        bottom_side.setLayout(bottom_side_layout)
-        self.log_layout = bottom_side_layout
-
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setWidget(bottom_side)
-        self.scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        vbar = self.scroll.verticalScrollBar()
-        vbar.rangeChanged.connect(lambda: vbar.setValue(vbar.maximum()))
-
-        layout.addWidget(top_side)
-        layout.addWidget(self.start_button)
-        layout.addWidget(self.gold_display)
-        layout.addWidget(self.exp_display)
-        # layout.addWidget(bottom_side)
-        layout.addWidget(self.scroll)
+        layout.addWidget(self.create_focus_catch())
+        layout.addWidget(self.create_party_menu())
+        layout.addWidget(self.create_buttons())
+        layout.addWidget(self.create_stats())
+        layout.addWidget(self.create_log())
         self.setLayout(layout)
 
     def create_focus_catch(self) -> QWidget:
@@ -180,19 +274,70 @@ class GuiTracker(QWidget):
         button.setFixedHeight(0)
         return button
 
-    def create_worker(self) -> None:
-        self.thread = QThread()
-        self.worker = GuiWorker(self.tracker)
-        # stop signal?
-        self.worker.moveToThread(self.thread)
-        self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.worker.log_event.connect(self.on_event_logged)
-        self.worker.log_string.connect(self.on_string_logged)
-        self.thread.finished.connect(self.thread.deleteLater)
+    def create_party_menu(self) -> QWidget:
+        menu = PartyMenu(self.tracker)
+        menu.players_changed.connect(self.on_players_changed)
+        return menu
 
-        self.thread.started.connect(self.worker.do_work)
-        self.thread.finished.connect(self.worker.stop)
+    def create_buttons(self) -> QWidget:
+        widget = QWidget()
+        layout = QHBoxLayout()
+
+        # screen area selection
+        button = QPushButton('set screen region')
+        button.clicked.connect(lambda: self.worker.resize_button_clicked()) # type: ignore
+        layout.addWidget(button)
+
+        # start / pause / unpause
+        self.start_button = QPushButton('start')
+        self.start_button.clicked.connect(self.main_button_clicked) # type: ignore
+        layout.addWidget(self.start_button)
+
+        # reset timer
+        reset_button = QPushButton('reset')
+        reset_button.clicked.connect(self.reset_button_clicked) # type: ignore
+        layout.addWidget(reset_button)
+
+        widget.setLayout(layout)
+        return widget
+
+    def create_stats(self) -> QWidget:
+        widget = QWidget()
+        layout = QVBoxLayout()
+
+        self.time_display = QLabel('0:00:00')
+        self.gold_display = QLabel('0 gold (0/hr)')
+        self.exp_display = QLabel('0 exp (0/hr)')
+
+        layout.addWidget(self.time_display)
+        layout.addWidget(self.gold_display)
+        layout.addWidget(self.exp_display)
+
+        widget.setLayout(layout)
+        return widget
+
+    def create_log(self) -> QWidget:
+        widget = QWidget()
+        self.log_layout = QVBoxLayout()
+        self.log_layout.addWidget(QLabel('event log'))
+        widget.setLayout(self.log_layout)
+
+        scroll = QScrollArea()
+        scroll.setWidget(widget)
+        scroll.setWidgetResizable(True)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)   # type: ignore
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff) # type: ignore
+
+        # keep scroll at the bottom
+        vbar = scroll.verticalScrollBar()
+        vbar.rangeChanged.connect(lambda: vbar.setValue(vbar.maximum())) # type: ignore
+
+        # self.log_layout.addWidget(scroll)
+        return scroll
+
+    #
+    # ui callbacks
+    #
 
     def main_button_clicked(self) -> None:
         if self.worker.paused:
@@ -201,6 +346,50 @@ class GuiTracker(QWidget):
         else:
             self.worker.pause()
             self.start_button.setText('unpause')
+
+    def reset_button_clicked(self) -> None:
+        self.tracker.gamestate.gold_count = 0
+        self.tracker.gamestate.exp_count = 0
+        self.worker.duration = 0
+
+    def on_players_changed(self, players: List[List[str]]) -> None:
+        self.tracker.gamestate.players = {}
+        for player in players:
+            if len(player) != 2:
+                logging.error('invalid player options: {player}')
+                continue
+
+            username, classname = player
+            if username == '' or classname == '':
+                # less than full party
+                continue
+
+            if self.tracker.database.player_exists(classname):
+                player = self.tracker.database.load_player(classname)
+                self.tracker.gamestate.players[username] = player
+
+    #
+    # worker
+    #
+
+    def create_worker(self) -> None:
+        self.worker_thread = QThread()
+        self.worker = GuiWorker(self.tracker)
+        # stop signal?
+        self.worker.moveToThread(self.worker_thread)
+        self.worker.finished.connect(self.worker_thread.quit)        # type: ignore
+        self.worker.finished.connect(self.worker.deleteLater) # type: ignore
+        self.worker.log_event.connect(self.on_event_logged)   # type: ignore
+        self.worker.log_string.connect(self.on_string_logged) # type: ignore
+        self.worker.log_tick.connect(self.update_timer)       # type: ignore
+        self.worker_thread.finished.connect(self.worker_thread.deleteLater) # type: ignore
+
+        self.worker_thread.started.connect(self.worker.do_work) # type: ignore
+        self.worker_thread.finished.connect(self.worker.stop)   # type: ignore
+
+    #
+    # worker callbacks
+    #
 
     def on_event_logged(self, e: GameEvent) -> None:
         if e.type == EventType.get_gold:
@@ -227,78 +416,10 @@ class GuiTracker(QWidget):
         hourly = exp // hours
         self.exp_display.setText(f'{exp} exp ({hourly}/hr)')
 
-    #
-    # username input
-    #
-
-    def create_username_box(self) -> QWidget:
-        self.username_editor = ClickableLineEdit()
-        self.username_editor.setText('username')
-        self.username_editor.textChanged.connect(self.username_changed)
-        self.username_editor.clicked.connect(self.username_clicked)
-        self.username_editor.setAlignment(Qt.AlignCenter)
-        return self.username_editor
-
-    def username_changed(self, s: str) -> None:
-        if s in self.tracker.gamestate.players:
-            del self.tracker.gamestate.players[s]
-        if s != '' and s != 'username':
-            self.update_player()
-            self.username = s
-
-    def username_clicked(self) -> None:
-        if self.username_editor.text() == 'username':
-            self.username_editor.setText('')
-
-    #
-    # player select
-    #
-
-    def create_player_select(self) -> QWidget:
-        widget = QWidget()
-        layout = QHBoxLayout()
-        widget.setLayout(layout)
-
-        self.player_options = QComboBox()
-        self.player_options.addItem('-')
-        rows = tracker.database.select('SELECT id, name FROM players', ())
-        for row in rows:
-            row = cast(Tuple[int, str], row)
-            pid, name = row
-            self.player_options.addItem(name)
-            self.players.append((pid, name))
-        self.player_options.currentIndexChanged.connect(
-            self.player_name_selected
-        )
-
-        # layout.addWidget(QLabel('player: '))
-        layout.addWidget(self.player_options)
-        return widget
-
-    def player_name_selected(self, i: int) -> None:
-        if i == 0:
-            # don't allow the default blank option
-            if self.selected_player_index >= 0:
-                self.player_options.setCurrentIndex(
-                    self.selected_player_index + 1
-                )
-        elif i - 1 != self.selected_player_index:
-            self.selected_player_index = i - 1
-            self.update_player()
-
-    def update_player(self) -> None:
-        pid, name = self.players[self.selected_player_index]
-        player = self.tracker.database.load_player(name)
-        self.tracker.gamestate.players[self.username] = player
-
-    #
-    # screen selection
-    #
-
-    def create_resize_button(self) -> QWidget:
-        button = QPushButton('screen region')
-        button.clicked.connect(lambda: self.worker.resize_button_clicked())
-        return button
+    def update_timer(self) -> None:
+        total_time = self.worker.duration
+        td = datetime.timedelta(seconds=total_time)
+        self.time_display.setText(str(td).split('.')[0])
 
 
 if __name__ == '__main__':
