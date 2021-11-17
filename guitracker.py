@@ -353,20 +353,20 @@ class GuiTracker(QWidget):
         self.worker.duration = 0
 
     def on_players_changed(self, players: List[List[str]]) -> None:
-        self.tracker.gamestate.players = {}
-        for player in players:
-            if len(player) != 2:
+        self.tracker.gamestate.remove_players()
+        for player_l in players:
+            if len(player_l) != 2:
                 logging.error('invalid player options: {player}')
                 continue
 
-            username, classname = player
+            username, classname = player_l
             if username == '' or classname == '':
                 # less than full party
                 continue
 
             if self.tracker.database.player_exists(classname):
                 player = self.tracker.database.load_player(classname)
-                self.tracker.gamestate.players[username] = player
+                self.tracker.gamestate.add_player(username, player)
 
     #
     # worker
@@ -423,6 +423,15 @@ class GuiTracker(QWidget):
 
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', action='store_true')
+    args = parser.parse_args()
+
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger('PIL.PngImagePlugin').disabled = True
+
     with RetroTracker() as tracker:
         app = QApplication([])
         window = GuiTracker(tracker)

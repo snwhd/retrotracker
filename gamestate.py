@@ -2,8 +2,13 @@
 from __future__ import annotations
 from typing import (
     Dict,
+    List,
     Optional,
+    Iterable,
+    Set,
+    Tuple,
 )
+import jellyfish
 import logging
 import re
 
@@ -24,9 +29,10 @@ RE_NAME = '([^-]+)(?:-+.+)?'
 
 # Using .* instead of \d* in some places because OCR is not perfect
 RE_USES_ATTACK =  re.compile(f'{RE_NAME} uses (.+) on {RE_NAME}.')
+RE_USES_MULTI =   re.compile(f'{RE_NAME} uses (.+).')
 RE_TAKES_DAMAGE = re.compile(f'{RE_NAME} takes (.+) damage.')
-RE_FIND_GOLD =    re.compile(r'you find (.+) gold.')
-RE_GAIN_EXP =     re.compile(r'you gain (.+) experience.')
+RE_FIND_GOLD =    re.compile(r'.ou find (.+) gold.')
+RE_GAIN_EXP =     re.compile(r'.ou gain (.+) experience.')
 
 
 class GameState:
@@ -40,6 +46,9 @@ class GameState:
         self.gold_count = 0
         self.exp_count = 0
         self.state = 'none'
+
+        self.known_nouns: Set[str] = set()
+        self.similarity_cache: Dict[str, str] = {}
 
         self.players: Dict[str, Player] = {}
         self.ability: Optional[str]  = None
@@ -62,6 +71,39 @@ class GameState:
         player: Player,
     ) -> None:
         self.players[username] = player
+        self.add_nouns([username])
+
+    def remove_players(self) -> None:
+        for username in self.players:
+            self.known_nouns.remove(username)
+        self.players = {}
+
+    def add_nouns(self, nouns: Iterable[str]) -> None:
+        for n in nouns:
+            self.known_nouns.add(n)
+        self.similarity_cache = {}
+
+    def get_noun(self, s: str) -> str:
+        if s in self.similarity_cache:
+            return self.similarity_cache[s]
+        lowest_noun = s
+        lowest_dist = 4
+        # TODO: what if its a new monster type
+        for noun in self.known_nouns:
+            dist = jellyfish.levenshtein_distance(s, noun)
+            if dist < lowest_dist:
+                lowest_dist = dist
+                lowest_noun = noun
+        self.similarity_cache[s] = lowest_noun
+        if s != lowest_noun:
+            logging.debug(f'corrected "{s}" to "{lowest_noun}"')
+        return lowest_noun
+
+    def clear_state(self) -> None:
+        self.state = 'none'
+        self.ability = None
+        self.target = None
+        self.source = None
 
     def handle_line(
         self,
@@ -73,34 +115,55 @@ class GameState:
             if self.state != 'none':
                 # TODO: handle miss
                 logging.debug(f'unexpected state for attack: {self.state}')
+                self.clear_state()
 
             source, ability, target = matches.groups()
+            self.ability = ability
+            self.target = self.get_noun(target)
+            self.source = self.get_noun(source)
             if source in self.players:
                 self.state = 'player attacking'
-                self.ability = ability
-                self.target = target
-                self.source = source
             elif target in self.players:
                 self.state = 'monster attacking'
-                self.ability = ability
-                self.target = target
-                self.source = source
             else:
                 logging.debug(f'unknown source/target in {line}')
+                self.clear_state()
+            return None
+
+        matches = RE_USES_MULTI.match(line)
+        if matches:
+            if self.state != 'none':
+                # TODO: handle miss
+                logging.debug(f'unexpected state for attack: {self.state}')
+                self.clear_state()
+
+            source, ability = matches.groups()
+            source = self.get_noun(source)
+            if source in self.players:
+                self.state = 'multi-attack'
+                self.ability = ability
+                self.source = source
             return None
 
         matches = RE_TAKES_DAMAGE.match(line)
         if matches:
             target, damage_s = matches.groups()
             damage = OCR.parse_int(damage_s)
-            event: Optional[GameEvent] = None
+            target = self.get_noun(target)
 
             if damage > 110:
                 old_damage = damage
                 damage -= (damage // 100) * 100
                 logging.debug(f'damage {old_damage} looks too high -> {damage}')
 
-            if self.state == 'player attacking':
+            if self.state == 'multi-attack':
+                if target in self.players:
+                    self.state = 'player attacking multi'
+                else:
+                    self.state = 'monster attacking multi'
+
+            event: Optional[GameEvent] = None
+            if self.state in ('player attacking', 'player attacking multi'):
                 self.player_hits(target, damage, second_db)
                 event = GameEvent(
                     EventType.player_hit,
@@ -109,7 +172,7 @@ class GameState:
                     damage = damage,
                     ability = self.ability,
                 )
-            elif self.state == 'monster attacking':
+            elif self.state in ('monster attacking', 'monster attacking multi'):
                 self.monster_hits(target, damage, second_db)
                 event = GameEvent(
                     EventType.monster_hit,
@@ -120,11 +183,12 @@ class GameState:
                 )
             else:
                 logging.debug(f'invalid state "{self.state}" for damage')
+                self.clear_state()
 
-            self.ability = None
-            self.target = None
-            self.source = None
-            self.state = 'none'
+            if 'multi' not in self.state:
+                # don't clear source when hitting multiple targets
+                # TODO: how to clear this on the last one...?
+                self.clear_state()
             return event
 
         matches = RE_FIND_GOLD.match(line)
@@ -147,7 +211,6 @@ class GameState:
                 total = self.exp_count,
             )
 
-        logging.debug(f'unhandled: {line}')
         return None
 
     def player_hits(

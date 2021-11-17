@@ -5,6 +5,7 @@ import PIL.ImageOps
 import pyscreenshot as ImageGrab
 import pytesseract
 import unidecode
+import logging
 import re
 
 from typing import (
@@ -43,6 +44,9 @@ class OCR:
 
     @staticmethod
     def parse_int(s: str) -> int:
+        if s == 'psu':
+            # this is a really weird but consistent edge case:
+            return 20
         return int(s.translate(INT_TRANS))
 
     def screen_capture(self) -> Image:
@@ -81,6 +85,7 @@ class OCR:
                 # avoid duplicate lines
                 if line != self.previous_line:
                     self.previous_line = line
+                    logging.debug(line)
                     yield line
 
     def gen_split_lines(
