@@ -10,6 +10,8 @@ class EventType(enum.Enum):
     find_gold = 'find_gold'
     find_item = 'find_item'
     gain_exp = 'gain_exp'
+    recover_mp = 'recover mp'
+    recover_hp = 'recover hp'
 
 
 class GameEvent:
@@ -42,6 +44,10 @@ class GameEvent:
             return f'you gained {self.amount} experience'
         if self.type == EventType.find_item:
             return f'you found an item: {self.item}'
+        if self.type == EventType.recover_mp:
+            return f'{self.source} used {self.ability} on {self.target} ({self.amount} mp)'
+        if self.type == EventType.recover_hp:
+            return f'{self.source} used {self.ability} on {self.target} ({self.amount} hp)'
         return 'invalid GameEvent'
 
     @property

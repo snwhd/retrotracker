@@ -31,9 +31,12 @@ RE_NAME = '([^-]+)(?:-+.+)?'
 
 # Using .* instead of \d* in some places because OCR is not perfect
 RE_SELECT_ACTION = re.compile(r'select an action.')
-RE_USES_ATTACK   = re.compile(f'{RE_NAME} uses (.+) on {RE_NAME}.')
+RE_USES_ATTACK   = re.compile(f'{RE_NAME} uses (.+) on {RE_NAME}\\.')
 RE_USES_MULTI    = re.compile(f'{RE_NAME} uses (.+)\\.')
 RE_TAKES_DAMAGE  = re.compile(f'{RE_NAME} takes (.+) damage.')
+
+RE_RECOVERS_MP = re.compile(f'{RE_NAME} recovers (.+) mp\\.')
+RE_RECOVERS_HP = re.compile(f'{RE_NAME} recovers (.+) hp\\.')
 
 RE_ENEMY_APPROACHES = re.compile(r'an enemy approaches.')
 RE_NAME_DEFEATED  = re.compile(f'{RE_NAME} is defeated\\.')
@@ -45,12 +48,15 @@ RE_GAIN_EXP       = re.compile(r'.ou gain (.+) experience.')
 class GameStates(enum.Enum):
     not_in_battle = 'not in battle'
     selecting_action = 'selecting action'
+
     player_attacking = 'player attacking'
-    monster_attacking = 'monster attacking'
-    multi_attack = 'multi attack'
     player_attacking_multi = 'player attacking multi'
+    player_using_item = 'player using item'
+
+    monster_attacking = 'monster attacking'
     monster_attacking_multi = 'monster attacking multi'
-    battle_complete = 'battle complete'
+
+    multi_attack = 'multi attack'
 
 
 HandlerResult = Tuple[bool, Optional[GameEvent]]
@@ -86,12 +92,15 @@ class GameState:
         self.state_handlers: List[HandlerMethod] = [
             # Order here matters in case one regex could
             # match on multiple strings.
+            self.handle_enemy_approaches,
+            self.handle_select_action,
+
             self.handle_uses_attack,
             self.handle_uses_muilti,
             self.handle_takes_damage,
 
-            self.handle_enemy_approaches,
-            self.handle_select_action,
+            self.handle_recovers_mp,
+            self.handle_recovers_hp,
 
             self.handle_name_defeated,
             self.handle_enemy_defeated,
@@ -389,6 +398,64 @@ class GameState:
             # TODO: selecting_action is incorrect here if we are
             #       in between attacks, but it will still work
             self.clear_state(GameStates.selecting_action)
+        return True, event
+
+    # TODO: Clean this up a bit, for now using an item and attacking
+    #       are caught by the same regex.
+    # def handle_uses_item(
+    #     self,
+    #     line: str,
+    #     second_db: bool,
+    # ) -> HandlerResult:
+    #     matches = RE_USES_ITEM.match(line)
+    #     if not matches:
+    #         return False, None
+    #     self.expect_state(['selecting action'])
+    #     self.set_state(GameStates.player_using_item)
+    #     return True, None
+
+    def handle_recovers_mp(
+        self,
+        line: str,
+        second_db: bool,
+    ) -> HandlerResult:
+        matches = RE_RECOVERS_MP.match(line)
+        if not matches:
+            return False, None
+        self.expect_state(['player attacking'])
+
+        target = self.get_noun(matches.groups()[0])
+        amount = OCR.parse_int(matches.groups()[1])
+        event = GameEvent(
+            EventType.recover_mp,
+            source=self.source,
+            ability=self.ability,
+            target=target,
+            amount=amount,
+        )
+        self.clear_state(GameStates.selecting_action)
+        return True, event
+
+    def handle_recovers_hp(
+        self,
+        line: str,
+        second_db: bool,
+    ) -> HandlerResult:
+        matches = RE_RECOVERS_HP.match(line)
+        if not matches:
+            return False, None
+        self.expect_state(['player attacking'])
+
+        target = self.get_noun(matches.groups()[0])
+        amount = OCR.parse_int(matches.groups()[1])
+        event = GameEvent(
+            EventType.recover_hp,
+            source=self.source,
+            ability=self.ability,
+            target=target,
+            amount=amount,
+        )
+        self.clear_state(GameStates.selecting_action)
         return True, event
 
     def handle_enemy_defeated(
