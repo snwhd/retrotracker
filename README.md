@@ -15,7 +15,7 @@ There are 3 executable python scripts for using retrotracker:
 ## basic usage
 1. install some prereqs
     1. `python3 -m pip install numpy pillow pytesseract pyscreenshot unidecode`
-    1. you'll need tesseract too `apt install tesseract-ocr`
+    1. you'll need tesseract too `apt install tesseract-ocr jellyfish PyQt5`
 1. start by initializing the database: `./modify.py init`
 1. create some player stats
     1. use preset stats `./modify create_presets`

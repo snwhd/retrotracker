@@ -392,9 +392,9 @@ class GuiTracker(QWidget):
     #
 
     def on_event_logged(self, e: GameEvent) -> None:
-        if e.type == EventType.get_gold:
+        if e.type == EventType.find_gold:
             self.update_gold_count()
-        elif e.type == EventType.get_exp:
+        elif e.type == EventType.gain_exp:
             self.update_exp_count()
         try:
             self.log_layout.addWidget(QLabel(str(e)))

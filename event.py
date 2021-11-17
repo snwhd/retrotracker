@@ -7,9 +7,9 @@ import enum
 class EventType(enum.Enum):
     monster_hit = 'monster_hit'
     player_hit = 'player_hit'
-    get_gold = 'get_gold'
-    get_item = 'get_item'
-    get_exp = 'get_exp'
+    find_gold = 'find_gold'
+    find_item = 'find_item'
+    gain_exp = 'gain_exp'
 
 
 class GameEvent:
@@ -36,11 +36,11 @@ class GameEvent:
     def __str__(self) -> str:
         if self.type in (EventType.monster_hit, EventType.player_hit):
             return f'{self.source} used {self.ability} on {self.target} ({self.damage} damage)'
-        if self.type == EventType.get_gold:
+        if self.type == EventType.find_gold:
             return f'you found {self.amount} gold'
-        if self.type == EventType.get_exp:
-            return f'you got {self.amount} experience'
-        if self.type == EventType.get_item:
+        if self.type == EventType.gain_exp:
+            return f'you gained {self.amount} experience'
+        if self.type == EventType.find_item:
             return f'you found an item: {self.item}'
         return 'invalid GameEvent'
 
