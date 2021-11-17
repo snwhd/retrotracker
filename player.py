@@ -109,15 +109,17 @@ class Stats:
 
 
 class HGear(Stats, enum.Enum):
-    #               hp,  mp, str, def, agi, int, wis, lck
-    dented_helm = (  0,   0,   0,   3,   0,   0,   0,   0)
-    mage_hat    = (  0,   0,   0,   1,   0,   1,   2,   0)
+    #                hp,  mp, str, def, agi, int, wis, lck
+    dented_helm  = (  0,   0,   0,   3,   0,   0,   0,   0)
+    mage_hat     = (  0,   0,   0,   1,   0,   1,   2,   0)
+    jagged_crown = (  0,   0,   0,   2,   1,   0,   2,   1)
 
 
 class BGear(Stats, enum.Enum):
     #                  hp,  mp, str, def, agi, int, wis, lck
     leather_armor  = (  0,   0,   0,   3,   0,   0,   0,   0)
     tattered_cloak = (  0,   0,   0,   1,   0,   0,   1,   0)
+    padded_garb    = (  0,   0,   0,   2,   0,   0,   1,   0)
 
 
 class MGear(Stats, enum.Enum):
