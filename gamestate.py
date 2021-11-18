@@ -38,7 +38,7 @@ RE_TAKES_DAMAGE  = re.compile(f'{RE_NAME} takes (.+) damage.')
 RE_RECOVERS_MP = re.compile(f'{RE_NAME} recovers (.+) mp\\.')
 RE_RECOVERS_HP = re.compile(f'{RE_NAME} recovers (.+) hp\\.')
 
-RE_ENEMY_APPROACHES = re.compile(r'an enemy approaches.')
+RE_ENEMY_APPROACHES = re.compile(r'(an enemy|enemies) approach(es)?.')
 RE_NAME_DEFEATED  = re.compile(f'{RE_NAME} is defeated\\.')
 RE_ENEMY_DEFEATED = re.compile(r'the enemy is defeated!')
 RE_FIND_GOLD      = re.compile(r'.ou find (.+) gold.')
@@ -96,7 +96,7 @@ class GameState:
             self.handle_select_action,
 
             self.handle_uses_attack,
-            self.handle_uses_muilti,
+            self.handle_uses_multi,
             self.handle_takes_damage,
 
             self.handle_recovers_mp,
@@ -159,21 +159,15 @@ class GameState:
 
     def player_hits(
         self,
+        source: str,
+        ability: str,
         target: str,
         damage: int,
         second_db = False,
     ) -> None:
-        if self.ability is None or self.target is None or self.source is None:
-            logging.debug(f'missing parameters for player_hits')
-            return
-        if self.target != target:
-            logging.debug(f'target mismatch: {self.target} != {target}')
-            # TODO: pick best target
-            return
-
-        player = self.players.get(self.source)
+        player = self.players.get(source)
         if player is None:
-            logging.debug(f'invalid player hit: {self.source}')
+            logging.debug(f'invalid player hit: {source}')
             return
 
         # TODO: validate ability & monsters
@@ -182,10 +176,10 @@ class GameState:
         if second_db and self.second_database is not None:
             database = self.second_database
 
-        mid = database.get_monster_id(self.target)
+        mid = database.get_monster_id(target)
         database.insert_player_hit(
             player,
-            self.ability,
+            ability,
             mid,
             damage,
             0,
@@ -193,18 +187,12 @@ class GameState:
 
     def monster_hits(
         self,
+        source: str,
+        ability: str,
         target: str,
         damage: int,
         second_db = False,
     ) -> None:
-        if self.ability is None or self.target is None or self.source is None:
-            logging.debug(f'missing parameters for monster_hits')
-            return
-        if self.target != target:
-            logging.debug(f'target mismatch: {self.target} != {target}')
-            # TODO: pick best target
-            return
-
         player = self.players.get(target)
         if player is None:
             logging.debug(f'invalid player dmg: {target}')
@@ -216,10 +204,10 @@ class GameState:
         if second_db and self.second_database is not None:
             database = self.second_database
 
-        mid = database.get_monster_id(self.source)
+        mid = database.get_monster_id(source)
         database.insert_monster_hit(
             mid,
-            self.ability,
+            ability,
             player,
             damage,
             0,
@@ -289,7 +277,7 @@ class GameState:
         if not matches:
             return False, None
 
-        self.expect_state(['not in battle'])
+        self.expect_state(['not in battle'], 'enemy_approaches')
         self.set_state(GameStates.selecting_action)
         return True, None
 
@@ -328,7 +316,7 @@ class GameState:
             self.clear_state()
         return True, None
 
-    def handle_uses_muilti(
+    def handle_uses_multi(
         self,
         line: str,
         second_db: bool,
@@ -337,7 +325,10 @@ class GameState:
         if not matches:
             return False, None
 
-        self.expect_state(['selecting action', 'attacking'], 'uses_multi')
+        self.expect_state(
+            ['selecting action', 'attacking', 'multi attack'],
+            'uses_multi',
+        )
         self.source = self.get_noun(matches.groups()[0])
         self.ability = matches.groups()[1]
         if self.source in self.players:
@@ -356,14 +347,23 @@ class GameState:
         if not matches:
             return False, None
 
-        self.expect_state(['attacking'])
-        target = self.get_noun(matches.groups()[0])
+        self.expect_state(['attacking', 'multi attack'], 'takes_damage')
+        self.target = self.get_noun(matches.groups()[0])
         damage = OCR.parse_int(matches.groups()[1])
         damage = self.correct_damage(damage)
+
+        source = self.source
+        target = self.target
+        ability = self.ability
+        if source is None or target is None or ability is None:
+            logging.debug(f'(takes_damage) err ({source}, {target}, {ability})')
+            self.clear_state(GameStates.selecting_action)
+            return True, None
+
         if self.state == GameStates.multi_attack:
             # In a multi-target attack we need to determine target type
             # when damage is being dealt.
-            if target in self.players:
+            if source in self.players:
                 self.set_state(GameStates.player_attacking_multi)
             else:
                 self.set_state(GameStates.monster_attacking_multi)
@@ -371,19 +371,19 @@ class GameState:
         event: Optional[GameEvent] = None
         if self.check_state('player attacking'):
             # player attacking (multi)
-            self.player_hits(target, damage, second_db)
+            self.player_hits(source, ability, target, damage, second_db)
             event = GameEvent(
                 EventType.player_hit,
-                source = self.source,
+                source = source,
                 target = target,
                 damage = damage,
                 ability = self.ability,
             )
         elif self.check_state('monster attacking'):
-            self.monster_hits(target, damage, second_db)
+            self.monster_hits(source, ability, target, damage, second_db)
             event = GameEvent(
                 EventType.monster_hit,
-                source = self.source,
+                source = source,
                 target = target,
                 damage = damage,
                 ability = self.ability,
@@ -392,7 +392,7 @@ class GameState:
             logging.debug(f'invalid state "{self.state}" for damage')
             self.clear_state()
 
-        if 'multi' not in self.state.value:
+        if not self.check_state('multi'):
             # don't clear source when hitting multiple targets
             # TODO: how to clear this on the last one...?
             # TODO: selecting_action is incorrect here if we are
@@ -422,7 +422,7 @@ class GameState:
         matches = RE_RECOVERS_MP.match(line)
         if not matches:
             return False, None
-        self.expect_state(['player attacking'])
+        self.expect_state(['player attacking'], 'recovers_mp')
 
         target = self.get_noun(matches.groups()[0])
         amount = OCR.parse_int(matches.groups()[1])
@@ -444,7 +444,7 @@ class GameState:
         matches = RE_RECOVERS_HP.match(line)
         if not matches:
             return False, None
-        self.expect_state(['player attacking'])
+        self.expect_state(['player attacking'], 'recovers_hp')
 
         target = self.get_noun(matches.groups()[0])
         amount = OCR.parse_int(matches.groups()[1])

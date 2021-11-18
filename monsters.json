@@ -1,0 +1,178 @@
+{
+    "cave bat": {
+        "img": "eJwlwzEKwjAUgOG/FXR0dHPwGoLPwau4CiJYB0tyAq/g5uboWnoCVxehGQWhcQvSkCfqB5+FrIbeC4b7xWTmr5sQDmtfjHft6vjelqqVMSlJ8FEu5yhdE+U+jaOqfAxU3a9JLledZ6qWpgMfwCSQCEULzxucltB3kNf/WL4+1lg7+g==",
+        "avg": [
+            142,
+            84,
+            55
+        ]
+    },
+    "big gobble": {
+        "img": "eJyTY2BgsAPieoYGhvoH6Tz//7zv4f/B/IH/gd8D/gbxDfIvmBfY78j/UG8f/sOe+8sffsn/75js/ocxyP7TYeD+38PA/H8GA8N/OQb2vw4M/O8bGJh/FjDw3tzBwJK/hIH9/wYG7n8PGJgLFBgYHAoYGBoKGJgbFBj4Gyyg1jIAAF/fK/M=",
+        "avg": [
+            74,
+            101,
+            78
+        ]
+    },
+    "cursed candle": {
+        "img": "eJxNy8EJwDAMA0BBvwWv0gEKXt0DZBhDvwZVJgnEcA9JGEABloBvAT4wFpwMkinVlGkHn7ofcos3bUNiyUts/Z/nH98fb1tXlA==",
+        "avg": [
+            116,
+            118,
+            196
+        ]
+    },
+    "dimitri": {
+        "img": "eJxj/P+BgfH/Pwbm+v8NzH+/H2A/mf+A/+j7B9z6zz9I/z9RIP/8hAHXhXcCTOqaDAx58QzWZ942VMvzHzDaWMAg+Px8AodcTQNP7YOCMOc5DO///2DY9ez/n7q/Fg/+Ns8/wFzMU8X0U56BabPAAYZGBgUGBwYBBjQAACNRMsc=",
+        "avg": [
+            46,
+            108,
+            119
+        ]
+    },
+    "doom shroom": {
+        "img": "eJwlzMENhEAIhWGMhz1awpQypdjBWoCJlKYl2IFWsOvJTHTkl1GSLwECT0ISUZsqWGv3cQ3MbguQIuR4kvViV+NQ+PVg7WjWLXx93pX/ENlyuS9/njN5pjzVpFfIItFepS+7epUbwsVLdQ==",
+        "avg": [
+            42,
+            128,
+            127
+        ]
+    },
+    "evil stump": {
+        "img": "eJxjYGNkYGBnTmBL73/A/v3+A/b//8GYGYIPMH7/foDx8eMTjA8v32B4evg/y0P3fzyf8//I/rZ9Vv9f89D/VYoHtiswNiQlMDY4FDA3OFR4H2D4mw/S+4H///8f8v///7EH0jbf7HcYPOHfk/iIfz7DAeEGBgbGAwxAAABIwULZ",
+        "avg": [
+            156,
+            91,
+            58
+        ]
+    },
+    "goblin grunt": {
+        "img": "eJxjYGBj4OA/zsAh/56Br/4/gz0QW/8H4W8MlvUPwLi0/kXDH/n7D2rf//9j/fv/v/K//+q///8h96/+h9yf+g8yNfIP5Ri4z19myP//nvH//3fM/99/YP/97AH75IcHQJj54cMDDB+fNzBUArHkcgbGv/0NzD/YPzAAAQAlXkHw",
+        "avg": [
+            58,
+            136,
+            89
+        ]
+    },
+    "goblin archer": {
+        "img": "eJwdw7EJAkEQBdAPGxhsMBZwMJZgBxZhMQbiTXC5YC7Ygg2oK5eK2IC4ciBmDlyg0X1PHzxgCJQFwPU4cvuO9IfQn8LVJbLy38CNo5tklJbDji71y5VtNmuS8Qazrr9PymvWw93lPPVZ0jwn/4tFmwYnQagTcFxCPzoyF0fvC6luRQE=",
+        "avg": [
+            71,
+            128,
+            89
+        ]
+    },
+    "goblin jester": {
+        "img": "eJwtytEJwjAURuH/UsG3doS7ScWRXMBkg27QVZoNHKFOoIKCYkKOEfrwPZ0jk9RF6biTPWcpVNmSo63veILIJvDVAZLfeTiUAWqDU70ZfC29T8z9HtTCf1YAqxkr+aZzvmoktZZs4WVcikL3+QH/GEiE",
+        "avg": [
+            71,
+            89,
+            77
+        ]
+    },
+    "goblin juggler": {
+        "img": "eJwBgAB//wHAAAAD8AAMB/wAHGf/MD7v//A+7f/gDBn/2AAAf/wAAH9/4B57q8AN7+YAA9v8AAB/8AAZ/+AAPE/gcBw33fg7//5gf+/eOD/P7/wbl6P4AA1xsAAv6AAB//4AA/f/gAPX/8AB59vAAHNHgAAzBgAAEQwAAfgeAAP4D+AB8AfA4NQ5ng==",
+        "avg": [
+            45,
+            118,
+            147
+        ]
+    },
+    "goblin mage": {
+        "img": "eJwNy8EJwjAABdAfAs0KXiSIB1eoBLTQOYqKSygVm02KF10jnjpFSaBKVgi08u3hHZ+wgAyAmmYENCdUJLZMFnwDLMN1jG7tvVTmKfM2qds+6Lu23HUV67H5sfdT08av2TyGxfKS5YfP/AkTaesX3anr3XEobXGWKFYZRNKQSQURpPsD6r08Qg==",
+        "avg": [
+            19,
+            96,
+            98
+        ]
+    },
+    "goblin strongman": {
+        "img": "eJw9ybENwjAQRuFfSkGXbMAJMQRNJG/GuaNMyTjJBqzgLq3rKPLjTEHxNe/pVqX7kacH2VZy4q+E2tmb0yZaMuh8pQFjuEKLgj3hMzso0eRU0e3lx4eiNGyyS5flS/Ql/qt+AfSVTOg=",
+        "avg": [
+            30,
+            97,
+            89
+        ]
+    },
+    "goblin warrior": {
+        "img": "eJxjYGBg4GP8wMDH/KvBbvn/hvrt/xv+7//PUP//L0P99R8J8tdvf2B/vP0P39/X/2z+/a+vs//330r+Pp+9/n4+8/r/PCCcvP8ff+LnP9wMDz83M7C9P8Yg+/8Bg/33BIZ7jz4wPGd8wFADxHaMBxjkmA8w8DM3MMi3NzDUMz8AWs0AABirOk4=",
+        "avg": [
+            105,
+            146,
+            119
+        ]
+    },
+    "killer wasp": {
+        "img": "eJxjKOBjYPghz1B5rnjev/k/6//Z/6n////vfyDxr/7+73/2q6/+kT/++Af/++8f5L7lV9hYzrGxqP8nY/n//xzh/X9P8Jz/bMDZfHACM/uDA8wcAgeYBDgcGPg/MDDIWDAwCHAwMIi/YGDgK2AAi7E/gGBmIGYE8hkMGADTAzXe",
+        "avg": [
+            83,
+            147,
+            190
+        ]
+    },
+    "lizard": {
+        "img": "eJwdyLENwjAQQNFvRSJUuEwRhOnYAkZggwgxAxJUnDtKRmAU3yJBGSElhfFhUTzp68MNXIHGoA2RxbF2UjCtT9nZhNiM2cf9fTNWspNSGsnSWh685YuX99ZLIsiBlaR4H1+xjE+92kPP4if2/cyyO7EGNlWoevgBu+M0EQ==",
+        "avg": [
+            83,
+            117,
+            20
+        ]
+    },
+    "magic moth": {
+        "img": "eJwlysEJwkAURdGB9JFUEqYWycIiXLyV2IZgI2lDgs64kGlhEn7m+oPvcXY3dDn0pYaxpKYkLm+YrnDqIN5AyRWaFjfR4hNjkemB9WfqgY27XszDSNZOPcQVG75Y3DFt7uPdSvbPXgaF/37HDVlt",
+        "avg": [
+            63,
+            130,
+            142
+        ]
+    },
+    "medamaude": {
+        "img": "eJxjYPj/gYH5gAwY8/9/D8T/UTAzEgbx6///YfwPwewg+NnwP/9/g3oQtv9/fv5/oDgMswMxUMt/+///6uF4vh0/h4wFAwgzADEACV5FFQ==",
+        "avg": [
+            103,
+            122,
+            22
+        ]
+    },
+    "phantom knight": {
+        "img": "eJwBgAB//0ABYADAAfcA4Af5wOABEGDwA/gQ8A32APAH/AD4JVSA+HlTwHjwAMB8el3gePz/4jhuf8M8H78efn/+/+zv//8+f///Pjf8/j66Cv4dP///BX//fwD48X4J+Wi+E/zzGC///8B//+/g//9/oP7/f4B+TicAfDwDwDh+B+AAAAAAMppE0Q==",
+        "avg": [
+            113,
+            95,
+            116
+        ]
+    },
+    "skull bat": {
+        "img": "eJxLYGBgs2BgkLFhYLCxY2CokW1g3GHXwFhj78D0py6Brc5XgWWT3QHmmroGxjr7BsY/8g2MP+C4/eEPvv6PBXzzfxbwx//6wPb/fwL7/r8P2O//fsB+c/YD5p/zD7B/7H/AIHWDgYGvgIGBH4jZH0AwswMDCAAAMUctzg==",
+        "avg": [
+            86,
+            108,
+            99
+        ]
+    },
+    "sludge": {
+        "img": "eJzjb2D4YH+A8Q8I1z9g/vf/4cf7f9t/7AfhPP4/1nry/zaF7T92EoQrf0z7b3/N6p/9/3gwlv///5s0EHP+//8MhBn+/z/CUC3ex/yx+BsIs3/6/YX///8fQPwHhNmBmBnIZ/z//wMIM/z7fgAAbnNUpA==",
+        "avg": [
+            111,
+            135,
+            27
+        ]
+    },
+    "spider": {
+        "img": "eJwdhUEKglAYBj8LdBXu2noL20ivk4TLFu6DCH6PFLRoWReIjqAHqBDaCL7elA7MjJJWynrJecmCBJMR1As4pdAVUORQHWB7tLDeW3hz/RKawcYP0HzgcYb7BV4rC0/nvM+zvlqm3S5O2jKebcq5dIukenTqnx+KYUP5",
+        "avg": [
+            108,
+            73,
+            31
+        ]
+    },
+    "watcher": {
+        "img": "eJwlzLEJwDAMRNEzLlxqAYMXCXizxGOl9CAhZASXKgQXCRcPITg+igKdSOTM5ApCqlhTearKe2j82dqKDcgRe5QbyNN9Wwm6tWia80uDN4c3VnMnTa3bBetIWvEDjWY8Zw==",
+        "avg": [
+            70,
+            170,
+            202
+        ]
+    }
+}

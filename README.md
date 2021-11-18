@@ -41,7 +41,7 @@ The optimal positioning here will create a rectangle that contains only the
 text, and NOT the pixel border around the text. The border can mess up text
 recognition. See the screenshot below for refernce:
 
-![positioning guide](screen_position.png "positioning guide")
+![positioning guide](res/screen_position.png "positioning guide")
 
 Note: you have to press enter on the terminal before it reads your input.
 Use alt-tab since you can't move the mouse until it has read the position!
