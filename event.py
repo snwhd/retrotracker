@@ -28,12 +28,13 @@ class GameEvent:
         total: Optional[int] = None,
         damage: Optional[int] = None,
         item: Optional[str] = None,
+        encounter: Optional[int] = None,
     ) -> None:
         self.type = typ
         self._target = target
         self._total = total
         self._source = source or item
-        self._amount = amount or damage
+        self._amount = amount or damage or encounter
         self._ability = ability
         self.extra_text = ''
 
@@ -102,6 +103,16 @@ class GameEvent:
 
     @amount.setter
     def amount(self, v: int) -> None:
+        self._amount = v
+
+    @property
+    def encounter(self) -> int:
+        if self._amount is not None:
+            return self._amount
+        raise ValueError()
+
+    @amount.setter
+    def encounter(self, v: int) -> None:
         self._amount = v
 
     @property

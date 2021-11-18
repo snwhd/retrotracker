@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 from __future__ import annotations
-import sqlite3.dbapi2 as sqlite
 from typing import (
     cast,
     Any,
     Dict,
     List,
     Optional,
+    Sequence,
     Tuple,
+    Union,
 )
+import sqlite3.dbapi2 as sqlite
+import logging
 
 from player import (
     BGear,
@@ -116,21 +119,47 @@ class Database:
         )''', ())
         self.execute('''CREATE TABLE IF NOT EXISTS player_hit_monster (
             player INTEGER,
+            encounter INTEGER,
             monster INTEGER,
             ability STRING,
             damage INTGER,
-            enemies INTEGER,
+            monster_index INTEGER,
             FOREIGN KEY(player) REFERENCES players(id),
+            FOREIGN KEY(encounter) REFERENCES encounters(id),
             FOREIGN KEY(monster) REFERENCES monsters(id)
         )''', ())
         self.execute('''CREATE TABLE IF NOT EXISTS monster_hit_player (
             player INTEGER,
+            encounter INTEGER,
             monster INTEGER,
             ability STRING,
             damage INTGER,
-            friendlies INTEGER,
             FOREIGN KEY(player) REFERENCES players(id),
+            FOREIGN KEY(encounter) REFERENCES encounters(id),
             FOREIGN KEY(monster) REFERENCES monsters(id)
+        )''', ())
+        self.execute('''CREATE TABLE IF NOT EXISTS encounters (
+            id INTEGER PRIMARY KEY,
+            exp INTEGER,
+            gold INTEGER
+        )''', ())
+        self.execute('''CREATE TABLE IF NOT EXISTS encounter_players (
+            encounter INTEGER,
+            username STRING,
+            player INTEGER,
+            FOREIGN KEY(player) REFERENCES players(id),
+            FOREIGN KEY(encounter) REFERENCES encounters(id)
+        )''', ())
+        self.execute('''CREATE TABLE IF NOT EXISTS encounter_monsters (
+            encounter INTEGER,
+            monster INTEGER,
+            FOREIGN KEY(monster) REFERENCES monsters(id),
+            FOREIGN KEY(encounter) REFERENCES encounters(id)
+        )''', ())
+        self.execute('''CREATE TABLE IF NOT EXISTS encounter_items (
+            encounter INTEGER,
+            item STRING,
+            FOREIGN KEY(encounter) REFERENCES encounters(id)
         )''', ())
 
     #
@@ -210,25 +239,77 @@ class Database:
         return len(rows) > 0
 
     #
+    # encounters
+    #
+
+    def create_encounter(self) -> int:
+        return self.insert('INSERT INTO encounters VALUES (NULL, NULL, NULL)', ())
+
+    def encounter_add_players(
+        self,
+        eid: int,
+        players: Dict[str, Player],
+    ) -> None:
+        for username, player in players.items():
+            self.insert(
+                'INSERT INTO encounter_players VALUES (?, ?, ?)',
+                (eid, username, player.pid),
+            )
+
+    def encounter_add_monsters(
+        self,
+        eid: int,
+        monsters: Sequence[Union[int, str]],
+    ) -> None:
+        for monster in monsters:
+            if isinstance(monster, str):
+                monster = self.get_monster_id(monster)
+            self.insert(
+                'INSERT INTO encounter_monsters VALUES (?, ?)',
+                (eid, monster),
+            )
+
+    def update_encounter(
+        self,
+        eid: int,
+        *,
+        gold: Optional[int] = None,
+        exp:  Optional[int] = None,
+    ) -> None:
+        if gold is not None:
+            self.insert('UPDATE encounters SET gold=? WHERE id=?', (gold, eid))
+        if exp is not None:
+            self.insert('UPDATE encounters SET exp=? WHERE id=?', (exp, eid))
+
+    def encounter_add_item(
+        self,
+        eid: int,
+        item: str,
+    ) -> None:
+        self.insert('INSERT INTO encounter_items VALUES (?, ?)', (eid, item))
+
+    #
     # stats
     #
 
     def insert_player_hit(
         self,
         player: Player,
+        encounter: int,
         ability: str,
         target: int,
         damage: int,
         enemies: int,
     ) -> None:
         self.insert(
-            'INSERT INTO player_hit_monster VALUES (?, ?, ?, ?, ?)',
-            (player.pid, target, ability, damage, enemies),
+            'INSERT INTO player_hit_monster VALUES (?, ?, ?, ?, ?, ?)',
+            (player.pid, encounter, target, ability, damage, enemies),
         )
 
     def insert_monster_hit(
         self,
         monster: int,
+        encounter: int,
         ability: str,
         player: Player,
         damage: int,
@@ -236,5 +317,5 @@ class Database:
     ) -> None:
         self.insert(
             'INSERT INTO monster_hit_player VALUES (?, ?, ?, ?, ?)',
-            (player.pid, monster, ability, damage, friendlies),
+            (player.pid, encounter, monster, ability, damage, friendlies),
         )

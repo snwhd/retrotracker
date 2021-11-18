@@ -67,8 +67,8 @@ def cmd_player_hit(tracker: RetroTracker, args: Any):
             h.ability,
             h.damage
         FROM player_hit_monster as h
-            JOIN players as p ON h.player = p.id
-            JOIN monsters as m ON h.monster = m.id
+            JOIN players AS p ON h.player = p.id
+            JOIN monsters AS m ON h.monster = m.id
         WHERE
             m.name = ? AND
             p.name = ?
@@ -127,6 +127,78 @@ def cmd_monster_hit(tracker: RetroTracker, args: Any):
         print(f'{ability} - n={len(hits)} avg={avg:0.02f} std={std:0.02f}')
 
 
+def cmd_encounter(tracker: RetroTracker, args: Any):
+    encounter: Optional[int] = args.encounter_id
+    if encounter is None:
+        rows = tracker.database.select('''
+            SELECT
+                c.id,
+                c.exp,
+                c.gold,
+                (SELECT COUNT(*) FROM encounter_items as i WHERE i.encounter = c.id),
+                (SELECT COUNT(*) FROM encounter_monsters as m WHERE m.encounter = c.id),
+                (SELECT COUNT(*) FROM encounter_players p WHERE p.encounter = c.id)
+            FROM encounters as c
+        ''', ())
+        for row in rows:
+            eid, exp, gold, ni, nm, np = row
+            gold = gold or 0
+            exp = exp or 0
+            print(f'{eid:>3} - {np}v{nm} {exp} exp, {gold} gold')
+        return
+
+    # otherwise, detailed output
+    rows = tracker.database.select(
+        'SELECT exp, gold FROM encounters WHERE id=?',
+        (encounter,)
+    )
+    assert len(rows) == 1
+    exp, gold = cast(Tuple[int, int], rows[0])
+
+    rows = tracker.database.select('''
+        SELECT
+            m.name
+        FROM encounter_monsters AS em
+            JOIN monsters AS m ON em.monster = m.id
+        WHERE em.encounter = ?
+    ''', (encounter,))
+    monsters: List[str] = [row[0] for row in rows]
+
+    rows = tracker.database.select('''
+        SELECT
+            ep.username,
+            p.name
+        FROM encounter_players AS ep
+            JOIN players AS p ON ep.player = p.id
+        WHERE ep.encounter = ?
+    ''', (encounter,))
+    players = cast(List[Tuple[str, str]], list(rows))
+
+    print(f'encounter {encounter} -- {len(players)}v{len(monsters)}')
+    print(f'monsters: {", ".join(monsters)}')
+    print(f'        player        damage dealt    damage taken')
+    print(f'        ------        ------------    ------------')
+    for username, classname in players:
+        dealt = tracker.database.select('''
+            SELECT SUM(h.damage)
+            FROM player_hit_monster as h
+                JOIN encounters AS e ON e.id = h.encounter
+                JOIN encounter_players as p ON
+                    e.id = p.encounter AND p.player = h.player
+            WHERE e.id=? AND p.username=?
+        ''', (encounter, username))[0][0] or 0
+        taken = tracker.database.select('''
+            SELECT SUM(h.damage)
+            FROM monster_hit_player as h
+                JOIN encounters AS e ON e.id = h.encounter
+                JOIN encounter_players as p ON
+                    e.id = p.encounter AND p.player = h.player
+            WHERE e.id=? AND p.username=?
+        ''', (encounter, username))[0][0] or 0
+        name = f'{username} ({classname})'
+        print(f'{name:^22s} {str(dealt):^12s}    {str(taken):^12s}')
+
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
@@ -148,6 +220,10 @@ if __name__ == '__main__':
     subparser.add_argument('monster', type=str)
     subparser.add_argument('player', type=str)
     subparser.set_defaults(func=cmd_monster_hit)
+
+    subparser = subparsers.add_parser('encounter')
+    subparser.add_argument('encounter_id', type=int, nargs='?', default=None)
+    subparser.set_defaults(func=cmd_encounter)
 
     args = parser.parse_args()
     if hasattr(args, 'func'):

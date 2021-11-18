@@ -20,7 +20,7 @@ There are 4 executable python scripts for using retrotracker:
         1. [tesseract](https://tesseract-ocr.github.io/tessdoc/Home.html#binaries)
         1. [sqlite](https://sqlite.org/download.html)
     1. python libraries: `python3 -m pip install numpy pillow pytesseract pyscreenshot unidecode PyQt5 jellyfish`
-1. start by initializing the database: `./modify.py init`
+1. start by initializing the database: `./modify.py create`
 1. create some player stats
     1. use preset stats `./modify create_presets`
     1. or use the interactive tool `./modify add_player`

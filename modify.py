@@ -27,6 +27,12 @@ from retrotracker import RetroTracker
 
 
 PRESET_PLAYERS = {
+    'cl.int': Player(
+        PlayerClass.cleric,
+        10,
+        (HGear.jagged_crown, BGear.padded_garb, MGear.crooked_wand, OGear.bone_bracelet),
+        Stats(0, 0, 0, 0, 0, 6, 0, 0),
+    ),
     'wr.str': Player(
         PlayerClass.warrior,
         10,
@@ -299,10 +305,10 @@ if __name__ == '__main__':
     subparser.set_defaults(func=cmd_delete_monster)
 
     args = parser.parse_args()
-    with RetroTracker() as tracker:
-        if hasattr(args, 'func'):
+    if hasattr(args, 'func'):
+        with RetroTracker() as tracker:
             args.func(tracker, args)
-        else:
-            print('must provide a subcommand')
-            for choice in subparsers.choices:
-                print(f'  {choice}')
+    else:
+        print('must provide a subcommand')
+        for choice in subparsers.choices:
+            print(f'  {choice}')

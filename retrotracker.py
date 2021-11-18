@@ -33,11 +33,14 @@ class RetroTracker:
     def __enter__(self) -> RetroTracker:
         self.database.connect()
         params = ()
-        query = 'SELECT name FROM monsters'
-        self.gamestate.add_nouns([
-            row[0] for row in
-            self.database.select(query, params)
-        ])
+        try:
+            query = 'SELECT name FROM monsters'
+            self.gamestate.add_nouns([
+                row[0] for row in
+                self.database.select(query, params)
+            ])
+        except Exception as e:
+            pass
         return self
 
     def __exit__(self, *args, **kwargs) -> None:

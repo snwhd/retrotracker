@@ -82,6 +82,7 @@ class GameState:
 
         # current state
         self.state = GameStates.not_in_battle
+        self.encounter: Optional[int] = None
         self.gold_count = 0
         self.exp_count = 0
 
@@ -170,6 +171,12 @@ class GameState:
             logging.debug(f'invalid player hit: {source}')
             return
 
+        if self.encounter is None:
+            logging.warning(f'attack w/o encounter, starting one')
+            self.start_encounter(second_db)
+        encounter = self.encounter
+        assert encounter is not None
+
         # TODO: validate ability & monsters
 
         database = self.database
@@ -179,6 +186,7 @@ class GameState:
         mid = database.get_monster_id(target)
         database.insert_player_hit(
             player,
+            encounter,
             ability,
             mid,
             damage,
@@ -198,6 +206,12 @@ class GameState:
             logging.debug(f'invalid player dmg: {target}')
             return
 
+        if self.encounter is None:
+            logging.warning(f'attack w/o encounter, starting one')
+            self.start_encounter(second_db)
+        encounter = self.encounter
+        assert encounter is not None
+
         # TODO: validate ability & monsters
 
         database = self.database
@@ -207,11 +221,37 @@ class GameState:
         mid = database.get_monster_id(source)
         database.insert_monster_hit(
             mid,
+            encounter,
             ability,
             player,
             damage,
             0,
         )
+
+    def start_encounter(self, second_db: bool) -> int:
+        database = self.database
+        if second_db and self.second_database is not None:
+            database = self.second_database
+        eid = database.create_encounter()
+        database.encounter_add_players(eid, self.players)
+        self.encounter = eid
+        return eid
+
+    def add_monsters_to_encounter(
+        self,
+        monsters: List[str],
+        second_db = False,
+    ) -> None:
+        if self.encounter is None:
+            logging.warning('cannot add monsters None encounter, creating')
+            self.start_encounter(second_db)
+        encounter = self.encounter
+        assert encounter is not None
+        database = self.database
+        if second_db and self.second_database is not None:
+            database = self.second_database
+        database.encounter_add_monsters(encounter, monsters)
+        self.add_nouns(monsters)
 
     #
     # state handling
@@ -279,7 +319,11 @@ class GameState:
 
         self.expect_state(['not in battle'], 'enemy_approaches')
         self.set_state(GameStates.selecting_action)
-        return True, GameEvent(EventType.enemies_approach)
+        encounter_id = self.start_encounter(second_db)
+        return True, GameEvent(
+            EventType.enemies_approach,
+            encounter=encounter_id
+        )
 
     def handle_select_action(
         self,
@@ -496,6 +540,13 @@ class GameState:
         if not matches:
             return False, None
         amount = OCR.parse_int(matches.groups()[0])
+
+        if self.encounter is not None:
+            database = self.database
+            if second_db and self.second_database is not None:
+                database = self.second_database
+            database.update_encounter(self.encounter, gold=amount)
+
         self.gold_count += amount
         return True, GameEvent(
             EventType.find_gold,
@@ -512,6 +563,13 @@ class GameState:
         if not matches:
             return False, None
         amount = OCR.parse_int(matches.groups()[0])
+
+        if self.encounter is not None:
+            database = self.database
+            if second_db and self.second_database is not None:
+                database = self.second_database
+            database.update_encounter(self.encounter, exp=amount)
+
         self.exp_count += amount
         return True, GameEvent(
             EventType.gain_exp,

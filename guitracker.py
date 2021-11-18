@@ -26,6 +26,7 @@ import time
 import pymouse
 import logging
 import datetime
+import traceback
 
 from event import GameEvent, EventType
 from retrotracker import RetroTracker
@@ -90,6 +91,7 @@ class GuiWorker(QObject):
                 time.sleep(0.25)
             except Exception as e:
                 print(f'error: {e}')
+                traceback.print_exc()
         self.finished.emit()
 
     def pause(self) -> None:
@@ -101,6 +103,7 @@ class GuiWorker(QObject):
     def handle_event(self, e: GameEvent) -> None:
         if e.type == EventType.enemies_approach:
             enemies = self.tracker.omr.identify_monsters()
+            self.tracker.gamestate.add_monsters_to_encounter(enemies, True)
             e.extra_text = ', '.join(enemies)
         self.log_event.emit(e)
 
