@@ -279,7 +279,7 @@ class GameState:
 
         self.expect_state(['not in battle'], 'enemy_approaches')
         self.set_state(GameStates.selecting_action)
-        return True, None
+        return True, GameEvent(EventType.enemies_approach)
 
     def handle_select_action(
         self,

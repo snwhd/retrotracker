@@ -12,6 +12,7 @@ class EventType(enum.Enum):
     gain_exp = 'gain_exp'
     recover_mp = 'recover mp'
     recover_hp = 'recover hp'
+    enemies_approach = 'enemies approach'
 
 
 class GameEvent:
@@ -34,6 +35,7 @@ class GameEvent:
         self._source = source or item
         self._amount = amount or damage
         self._ability = ability
+        self.extra_text = ''
 
     def __str__(self) -> str:
         if self.type in (EventType.monster_hit, EventType.player_hit):
@@ -48,6 +50,8 @@ class GameEvent:
             return f'{self.source} used {self.ability} on {self.target} ({self.amount} mp)'
         if self.type == EventType.recover_hp:
             return f'{self.source} used {self.ability} on {self.target} ({self.amount} hp)'
+        if self.type == EventType.enemies_approach:
+            return f'enemies approach'
         return 'invalid GameEvent'
 
     @property

@@ -46,6 +46,7 @@ class GuiWorker(QObject):
         self.working = True
         self.duration = 0.0
 
+        self.resize_type = ''
         self.resize_timer = 0.0
         self.resizing = False
         self.resize_p = (0, 0)
@@ -71,8 +72,11 @@ class GuiWorker(QObject):
                         x, y = self.resize_p
                         x2, y2 = self.m.position()
                         bbox = (x, y, x2 - x, y2 - y)
-                        self.tracker.ocr.set_bbox(*bbox)
-                        self.log_string.emit(f'bbox set to {bbox}')
+                        if self.resize_type == 'text':
+                            self.tracker.ocr.set_bbox(*bbox)
+                            self.log_string.emit(f'text bbox set to {bbox}')
+                        elif self.resize_type == 'monster':
+                            self.log_string.emit(f'monster bbox set to {bbox}')
                         self.resize_p = (0, 0)
                         self.resize_timer = 0.0
                         self.resizing = False
@@ -95,15 +99,26 @@ class GuiWorker(QObject):
         self.paused = False
 
     def handle_event(self, e: GameEvent) -> None:
+        if e.type == EventType.enemies_approach:
+            enemies = self.tracker.omr.identify_monsters()
+            e.extra_text = ', '.join(enemies)
         self.log_event.emit(e)
 
     def stop(self) -> None:
         self.working = False
 
     def resize_button_clicked(self) -> None:
+        self.resize_type = 'text'
         self.resize_timer = 0.0
         self.resizing = True
         text = 'place (but don\'t click) cursor at top left of battle text'
+        self.log_string.emit(text)
+
+    def monster_button_clicked(self) -> None:
+        self.resize_type = 'monster'
+        self.resize_timer = 0.0
+        self.resizing = True
+        text = 'place (but don\'t click) cursor at top left of monster screen'
         self.log_string.emit(text)
 
 
@@ -212,8 +227,6 @@ class PartyMenu(QWidget):
         ]
 
         layout = QVBoxLayout()
-        # layout.setSpacing(0)
-        # layout.setContentsMargins(0, 0, 0, 0)
         for i in range(3):
             player_select = PlayerSelect(i, class_options)
             player_select.username_changed.connect(self.username_changed)
@@ -263,7 +276,8 @@ class GuiTracker(QWidget):
         layout = QVBoxLayout()
         layout.addWidget(self.create_focus_catch())
         layout.addWidget(self.create_party_menu())
-        layout.addWidget(self.create_buttons())
+        layout.addWidget(self.create_region_buttons())
+        layout.addWidget(self.create_control_buttons())
         layout.addWidget(self.create_stats())
         layout.addWidget(self.create_log())
         self.setLayout(layout)
@@ -279,14 +293,27 @@ class GuiTracker(QWidget):
         menu.players_changed.connect(self.on_players_changed)
         return menu
 
-    def create_buttons(self) -> QWidget:
+    def create_region_buttons(self) -> QWidget:
         widget = QWidget()
         layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # screen area selection
-        button = QPushButton('set screen region')
+        button = QPushButton('text region')
         button.clicked.connect(lambda: self.worker.resize_button_clicked()) # type: ignore
         layout.addWidget(button)
+
+        button = QPushButton('monster region')
+        button.clicked.connect(lambda: self.worker.monster_button_clicked()) # type: ignore
+        layout.addWidget(button)
+
+        widget.setLayout(layout)
+        return widget
+
+    def create_control_buttons(self) -> QWidget:
+        widget = QWidget()
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # start / pause / unpause
         self.start_button = QPushButton('start')
@@ -398,6 +425,8 @@ class GuiTracker(QWidget):
             self.update_exp_count()
         try:
             self.log_layout.addWidget(QLabel(str(e)))
+            if e.extra_text != '':
+                self.log_layout.addWidget(QLabel(str(e.extra_text)))
         except ValueError as e:
             print(f'value error from event: {e}')
 

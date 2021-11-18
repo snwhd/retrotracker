@@ -10,12 +10,15 @@ import re
 
 from typing import (
     Generator,
+    List,
     Optional,
     Tuple,
 )
 
 import warnings
 warnings.filterwarnings('ignore', category=Warning)
+
+from monsterdetector import MonsterDetector
 
 
 IGNORE_REGEX = re.compile(r'(meal\)|Sa 0\))')
@@ -35,6 +38,7 @@ class OCR:
         w: int,
         h: int,
     ) -> None:
+        self.monster_detector = MonsterDetector()
         self.previous_text: Optional[str] = None
         self.previous_line: Optional[str] = None
         self.x = x
@@ -102,3 +106,11 @@ class OCR:
         text: str,
     ) -> bool:
         return IGNORE_REGEX.match(text) is not None
+
+    #
+    # Optical Monster Recognition
+    #
+
+    def identify_monsters(self) -> List[str]:
+        image = self.screen_capture()
+        return self.monster_detector.identify(image)

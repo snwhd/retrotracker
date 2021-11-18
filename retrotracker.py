@@ -15,6 +15,7 @@ from gamestate import GameState
 
 
 DEFAULT_BBOX = (366, 701, 939, 192)
+DEFAULT_MONSTER_BBOX = (239, 190, 1054, 478)
 
 
 class RetroTracker:
@@ -22,10 +23,12 @@ class RetroTracker:
     def __init__(
         self,
         ocrbox: Tuple[int, int, int, int] = DEFAULT_BBOX,
+        omrbox: Tuple[int, int, int, int] = DEFAULT_MONSTER_BBOX,
     ) -> None:
         self.database = Database()
         self.gamestate = GameState(self.database)
         self.ocr = OCR(*ocrbox)
+        self.omr = OCR(*omrbox)
 
     def __enter__(self) -> RetroTracker:
         self.database.connect()
