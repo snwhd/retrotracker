@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from datetime import datetime
 import logging
 import time
 import re
@@ -149,11 +150,15 @@ def cmd_encounter(tracker: RetroTracker, args: Any):
 
     # otherwise, detailed output
     rows = tracker.database.select(
-        'SELECT exp, gold FROM encounters WHERE id=?',
+        'SELECT start, end, exp, gold FROM encounters WHERE id=?',
         (encounter,)
     )
     assert len(rows) == 1
-    exp, gold = cast(Tuple[int, int], rows[0])
+    start_s, end_s , exp, gold = cast(Tuple[str, str, int, int], rows[0])
+    date_format = '%Y-%m-%d %H:%M:%S'
+    start = datetime.strptime(start_s, date_format)
+    end = datetime.strptime(end_s, date_format)
+    delta = end - start
 
     rows = tracker.database.select('''
         SELECT
@@ -174,7 +179,8 @@ def cmd_encounter(tracker: RetroTracker, args: Any):
     ''', (encounter,))
     players = cast(List[Tuple[str, str]], list(rows))
 
-    print(f'encounter {encounter} -- {len(players)}v{len(monsters)}')
+    print(f'encounter {encounter} {len(players)}v{len(monsters)}')
+    print(f'{start} ({delta})')
     print(f'monsters: {", ".join(monsters)}')
     print(f'        player        damage dealt    damage taken')
     print(f'        ------        ------------    ------------')

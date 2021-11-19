@@ -140,8 +140,10 @@ class Database:
         )''', ())
         self.execute('''CREATE TABLE IF NOT EXISTS encounters (
             id INTEGER PRIMARY KEY,
-            exp INTEGER,
-            gold INTEGER
+            start STRING DEFAULT CURRENT_TIMESTAMP,
+            end STRING DEFAULT NULL,
+            exp INTEGER DEFAULT NULL,
+            gold INTEGER DEFAULT NULL
         )''', ())
         self.execute('''CREATE TABLE IF NOT EXISTS encounter_players (
             encounter INTEGER,
@@ -243,7 +245,10 @@ class Database:
     #
 
     def create_encounter(self) -> int:
-        return self.insert('INSERT INTO encounters VALUES (NULL, NULL, NULL)', ())
+        return self.insert(
+            'INSERT INTO encounters(id) VALUES (NULL)',
+            (),
+        )
 
     def encounter_add_players(
         self,
@@ -275,11 +280,14 @@ class Database:
         *,
         gold: Optional[int] = None,
         exp:  Optional[int] = None,
+        end: Optional[str] = None,
     ) -> None:
         if gold is not None:
             self.insert('UPDATE encounters SET gold=? WHERE id=?', (gold, eid))
         if exp is not None:
             self.insert('UPDATE encounters SET exp=? WHERE id=?', (exp, eid))
+        if end is not None:
+            self.insert('UPDATE encounters SET end=datetime(?) WHERE id=?', (end, eid))
 
     def encounter_add_item(
         self,

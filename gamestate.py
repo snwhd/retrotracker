@@ -525,6 +525,13 @@ class GameState:
         matches = RE_NAME_DEFEATED.match(line)
         if not matches:
             return False, None
+
+        if self.encounter is not None:
+            database = self.database
+            if second_db and self.second_database is not None:
+                database = self.second_database
+            database.update_encounter(self.encounter, end='now')
+
         return True, None
         # TODO: monster killed event
         # GameEvent(
