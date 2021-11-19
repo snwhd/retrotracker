@@ -120,6 +120,7 @@ class MonsterDetector:
         detector.load_baseline('res/retrommo/goblinWarrior.png','goblin warrior')
         detector.load_baseline('res/retrommo/killerWasp.png','killer wasp')
         detector.load_baseline('res/retrommo/lizard.png','lizard')
+        detector.load_baseline('res/retrommo/madTurkey.png','mad turkey')
         detector.load_baseline('res/retrommo/magicMoth.png','magic moth')
         detector.load_baseline('res/retrommo/medamaude.png','medamaude')
         detector.load_baseline('res/retrommo/phantomKnight.png','phantom knight')
@@ -174,8 +175,6 @@ class MonsterDetector:
         pixels = new_image.load()
 
         image = image.resize(REDUCED_SIZE, resample=Image.NEAREST)
-        with open('/tmp/asdf.png', 'wb') as f:
-            image.save(f)
         for x in range(new_image.width):
             for y in range(new_image.height):
                 pixel = image.getpixel((x, y))
