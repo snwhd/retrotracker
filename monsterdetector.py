@@ -9,6 +9,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Set,
 )
 
 import base64
@@ -30,17 +31,21 @@ class MonsterDetector:
     def __init__(self) -> None:
         self.filename = 'monsters.json'
         self.dataset = self.load(self.filename)
+        self.ignored_names: Set[str] = set()
 
     def load_baseline(
         self,
         filename: str,
         monster_name: str,
+        ignore = False,
     ) -> None:
         if monster_name in self.dataset:
             logging.error(f'[MonsterDetector] conflicting name {monster_name}')
             return
         image = Image.open(filename)
         self.dataset[monster_name] = self.reduce(image)
+        if ignore:
+            self.ignored_names.add(monster_name)
 
     def save(self) -> None:
         data: Dict[str, Any] = {}
@@ -68,7 +73,14 @@ class MonsterDetector:
         monster_images = self.split(image)
         logging.debug(f'[MonsterDetector] identifying {len(monster_images)}')
         reduced = map(self.reduce, monster_images)
-        return list(map(self.find_nearest, reduced))
+        nearest = map(self.find_nearest, reduced)
+        monsters: List[str] = []
+        for monster in nearest:
+            if monster in self.ignored_names:
+                logging.debug(f'ignoring monster: {monster}')
+                continue
+            monsters.append(monster)
+        return monsters
 
     def find_nearest(self, reduced: ReducedImage) -> str:
         best_score = 0.0
@@ -128,6 +140,7 @@ class MonsterDetector:
         detector.load_baseline('res/retrommo/sludge.png','sludge')
         detector.load_baseline('res/retrommo/spider.png','spider')
         detector.load_baseline('res/retrommo/watcher.png','watcher')
+        detector.load_baseline('res/retrommo/cursor.png','cursor', ignore=True)
         return detector
 
     @staticmethod

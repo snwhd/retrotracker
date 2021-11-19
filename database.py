@@ -325,5 +325,5 @@ class Database:
     ) -> None:
         self.insert(
             'INSERT INTO monster_hit_player VALUES (?, ?, ?, ?, ?)',
-            (player.pid, encounter, monster, ability, damage, friendlies),
+            (player.pid, encounter, monster, ability, damage),
         )
